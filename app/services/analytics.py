@@ -111,13 +111,21 @@ def language_stats(repositories):
             )
 
     if not languages:
-        return "Unknown"
 
-    return max(
+        return {
+            "top_language": "Unknown",
+            "languages": {}
+        }
+
+    top_language = max(
         languages,
         key=languages.get
     )
 
+    return {
+        "top_language": top_language,
+        "languages": languages
+    }
 
 # ==========================
 # MOST WORKED REPO
@@ -243,7 +251,7 @@ def analytics_pipeline(
             ["nodes"]
         )
 
-        language = language_stats(
+        language_data = language_stats(
             repositories
         )
 
@@ -287,7 +295,10 @@ def analytics_pipeline(
             },
 
             "top_language":
-            language
+            language_data["top_language"],
+
+            "languages":
+            language_data["languages"],
         }
 
     except Exception as e:
