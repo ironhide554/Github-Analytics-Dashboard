@@ -256,5 +256,3 @@ This project is licensed under the MIT License.
 
 **Sparsh Tiwari**
 
-
-Passionate about Machine Learning, Deep Learning, FastAPI, and Full Stack AI Applications.
