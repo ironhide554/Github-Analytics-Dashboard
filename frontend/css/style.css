@@ -134,6 +134,10 @@ body{
     margin:30px 0;
 }
 
+#loader.hidden{
+    display:none;
+}
+
 .spinner{
 
     width:70px;
@@ -195,6 +199,78 @@ body{
     color:#94a3b8;
 }
 
+.profile-info{
+
+    flex:1;
+}
+
+.profile-meta{
+
+    display:flex;
+
+    flex-wrap:wrap;
+
+    gap:10px;
+
+    margin-top:16px;
+}
+
+.profile-meta span{
+
+    padding:8px 12px;
+
+    border-radius:999px;
+
+    color:#cbd5e1;
+
+    background:rgba(148,163,184,0.12);
+}
+
+.profile-link,
+.action-bar button{
+
+    border:none;
+
+    border-radius:12px;
+
+    cursor:pointer;
+
+    color:white;
+
+    font-weight:600;
+
+    text-decoration:none;
+
+    background:#2563eb;
+}
+
+.profile-link{
+
+    padding:12px 18px;
+}
+
+.action-bar{
+
+    display:flex;
+
+    flex-wrap:wrap;
+
+    justify-content:flex-end;
+
+    gap:12px;
+
+    margin-bottom:25px;
+}
+
+.action-bar button{
+
+    padding:12px 18px;
+
+    background:#1e293b;
+
+    border:1px solid rgba(255,255,255,0.08);
+}
+
 .cards{
 
     display:grid;
@@ -245,12 +321,83 @@ body{
     font-size:1.3rem;
 }
 
+.card p{
+
+    margin-top:10px;
+
+    color:#94a3b8;
+}
+
+.table-section{
+
+    margin-bottom:30px;
+
+    padding:25px;
+
+    background:
+    rgba(255,255,255,0.05);
+
+    backdrop-filter:blur(15px);
+
+    border-radius:20px;
+
+    border:1px solid rgba(255,255,255,0.08);
+}
+
+.table-section h3{
+
+    margin-bottom:18px;
+}
+
+.table-wrap{
+
+    overflow-x:auto;
+}
+
+table{
+
+    width:100%;
+
+    border-collapse:collapse;
+}
+
+th,
+td{
+
+    padding:14px 12px;
+
+    text-align:left;
+
+    border-bottom:1px solid rgba(148,163,184,0.16);
+}
+
+th{
+
+    color:#94a3b8;
+
+    font-weight:600;
+}
+
+td{
+
+    color:#e2e8f0;
+}
+
+td a{
+
+    color:#60a5fa;
+
+    text-decoration:none;
+
+    font-weight:600;
+}
+
 .chart-section{
 
     display:grid;
 
     grid-template-columns:
-    repeat(auto-fit,minmax(450px,1fr));
+    repeat(auto-fit,minmax(320px,1fr));
 
     gap:20px;
 }
@@ -267,6 +414,8 @@ body{
     border:1px solid rgba(255,255,255,0.08);
 
     padding:25px;
+
+    min-height:420px;
 }
 
 .chart-card h3{
@@ -276,6 +425,8 @@ body{
 
 canvas{
 
+    width:100%;
+    height:340px;
     max-height:350px;
 }
 
@@ -294,6 +445,12 @@ canvas{
         flex-direction:column;
 
         text-align:center;
+    }
+
+    .profile-meta,
+    .action-bar{
+
+        justify-content:center;
     }
 }
 
