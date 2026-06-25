@@ -1,3 +1,121 @@
+let latestAnalytics = null;
+
+function escapeHtml(value) {
+
+    if (value === null || value === undefined) {
+        return "";
+    }
+
+    return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+function formatDate(value) {
+
+    if (!value) {
+        return "Not available";
+    }
+
+    return new Date(value).toLocaleDateString(
+        undefined,
+        {
+            year: "numeric",
+            month: "short",
+            day: "numeric"
+        }
+    );
+}
+
+function downloadFile(filename, content, type) {
+
+    const blob = new Blob(
+        [content],
+        { type }
+    );
+
+    const link = document.createElement("a");
+
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    link.click();
+
+    URL.revokeObjectURL(link.href);
+}
+
+function downloadJson() {
+
+    if (!latestAnalytics) {
+        return;
+    }
+
+    downloadFile(
+        `${latestAnalytics.username}-github-analytics.json`,
+        JSON.stringify(latestAnalytics, null, 2),
+        "application/json"
+    );
+}
+
+function downloadCsv() {
+
+    if (!latestAnalytics || !latestAnalytics.repositories) {
+        return;
+    }
+
+    const rows = [
+        [
+            "name",
+            "language",
+            "stars",
+            "forks",
+            "commits",
+            "updated_at",
+            "url"
+        ],
+        ...latestAnalytics.repositories.top_starred.map(repo => [
+            repo.name,
+            repo.language,
+            repo.stars,
+            repo.forks,
+            repo.commits,
+            repo.updated_at,
+            repo.url
+        ])
+    ];
+
+    const csv = rows
+        .map(row => row
+            .map(value => `"${String(value ?? "").replace(/"/g, '""')}"`)
+            .join(",")
+        )
+        .join("\n");
+
+    downloadFile(
+        `${latestAnalytics.username}-top-repositories.csv`,
+        csv,
+        "text/csv"
+    );
+}
+
+async function copySummary() {
+
+    if (!latestAnalytics) {
+        return;
+    }
+
+    const profileName =
+        latestAnalytics.profile.name ||
+        latestAnalytics.profile.login ||
+        latestAnalytics.username;
+
+    const summary = `${profileName}: ${latestAnalytics.total_contributions} contributions, ${latestAnalytics.current_streak}-day current streak, top language ${latestAnalytics.top_language}, ${latestAnalytics.repository_overview.total_stars} total stars.`;
+
+    await navigator.clipboard.writeText(summary);
+}
+
 async function analyze() {
 
     const username =
@@ -42,7 +160,57 @@ async function analyze() {
             return;
         }
 
+        latestAnalytics = data;
+
+        const topRepoRows = data.repositories.top_starred
+            .map(repo => `
+                <tr>
+                    <td>
+                        <a href="${escapeHtml(repo.url)}" target="_blank">
+                            ${escapeHtml(repo.name)}
+                        </a>
+                    </td>
+                    <td>${escapeHtml(repo.language)}</td>
+                    <td>${repo.stars}</td>
+                    <td>${repo.forks}</td>
+                    <td>${repo.commits}</td>
+                    <td>${formatDate(repo.updated_at)}</td>
+                </tr>
+            `)
+            .join("");
+
         dashboard.innerHTML = `
+
+        <div class="profile-card">
+            <img
+                src="${escapeHtml(data.profile.avatar_url)}"
+                alt="${escapeHtml(data.profile.login)} avatar">
+
+            <div class="profile-info">
+                <h2>${escapeHtml(data.profile.name || data.profile.login)}</h2>
+                <p>${escapeHtml(data.profile.bio || "No bio available")}</p>
+
+                <div class="profile-meta">
+                    <span>@${escapeHtml(data.profile.login)}</span>
+                    <span>${data.profile.followers} Followers</span>
+                    <span>${data.profile.following} Following</span>
+                    <span>${data.profile.public_repositories} Public Repos</span>
+                </div>
+            </div>
+
+            <a
+                class="profile-link"
+                href="${escapeHtml(data.profile.url)}"
+                target="_blank">
+                View Profile
+            </a>
+        </div>
+
+        <div class="action-bar">
+            <button onclick="downloadJson()">Download JSON</button>
+            <button onclick="downloadCsv()">Download CSV</button>
+            <button onclick="copySummary()">Copy Summary</button>
+        </div>
 
         <div class="cards">
 
@@ -91,6 +259,49 @@ async function analyze() {
                 <h1>${data.most_worked_repository.commit_count}</h1>
             </div>
 
+            <div class="card">
+                <h3>Total Stars</h3>
+                <h1>${data.repository_overview.total_stars}</h1>
+            </div>
+
+            <div class="card">
+                <h3>Total Forks</h3>
+                <h1>${data.repository_overview.total_forks}</h1>
+            </div>
+
+            <div class="card">
+                <h3>Repos Analyzed</h3>
+                <h1>${data.repository_overview.analyzed_count}</h1>
+            </div>
+
+            <div class="card">
+                <h3>Recently Updated</h3>
+                <h2>${escapeHtml(data.repository_overview.recently_updated.name)}</h2>
+                <p>${formatDate(data.repository_overview.recently_updated.updated_at)}</p>
+            </div>
+
+        </div>
+
+        <div class="table-section">
+            <h3>Top Starred Repositories</h3>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Repository</th>
+                            <th>Language</th>
+                            <th>Stars</th>
+                            <th>Forks</th>
+                            <th>Commits</th>
+                            <th>Updated</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${topRepoRows}
+                    </tbody>
+                </table>
+            </div>
         </div>
 
         <div class="chart-section">
