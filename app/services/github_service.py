@@ -51,6 +51,17 @@ def get_repositories(username):
     query = f"""
     {{
       user(login: "{username}") {{
+        name
+        login
+        bio
+        avatarUrl
+        url
+        followers {{
+          totalCount
+        }}
+        following {{
+          totalCount
+        }}
         repositories(
           first: 100,
           ownerAffiliations: OWNER,
@@ -60,11 +71,21 @@ def get_repositories(username):
           }}
         ) {{
 
+          totalCount
+
           nodes {{
 
             name
+            description
+            url
+            updatedAt
+            forkCount
 
             stargazerCount
+
+            primaryLanguage {{
+              name
+            }}
 
             languages(first: 10) {{
               edges {{
