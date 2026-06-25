@@ -77,15 +77,102 @@ def most_active_month(days):
 
     df["date"] = pd.to_datetime(df["date"])
 
-    df["month"] = df["date"].dt.strftime("%B %Y")
+    df["month_key"] = df["date"].dt.to_period("M")
 
     result = (
-        df.groupby("month")["contributionCount"]
+        df.groupby("month_key")["contributionCount"]
         .sum()
         .sort_values(ascending=False)
     )
 
-    return result.index[0]
+    return result.index[0].strftime("%B %Y")
+
+
+# ==========================
+# CONTRIBUTION BREAKDOWNS
+# ==========================
+
+def contribution_breakdowns(days):
+
+    df = pd.DataFrame(days)
+
+    if df.empty:
+
+        return {
+            "monthly": {},
+            "weekday": {},
+            "active_days": 0,
+            "average_per_active_day": 0,
+            "current_streak": 0
+        }
+
+    df["date"] = pd.to_datetime(df["date"])
+
+    monthly_result = (
+        df.assign(month=df["date"].dt.to_period("M"))
+        .groupby("month")["contributionCount"]
+        .sum()
+        .sort_index()
+    )
+
+    monthly = {
+        month.strftime("%b %Y"): int(total)
+        for month, total in monthly_result.items()
+    }
+
+    weekday_order = [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri",
+        "Sat",
+        "Sun"
+    ]
+
+    weekday_result = (
+        df.assign(weekday=df["date"].dt.strftime("%a"))
+        .groupby("weekday")["contributionCount"]
+        .sum()
+        .reindex(weekday_order, fill_value=0)
+    )
+
+    weekday = {
+        day: int(total)
+        for day, total in weekday_result.items()
+    }
+
+    active_days = int(
+        (df["contributionCount"] > 0).sum()
+    )
+
+    total_contributions = int(
+        df["contributionCount"].sum()
+    )
+
+    average_per_active_day = (
+        round(total_contributions / active_days, 1)
+        if active_days else 0
+    )
+
+    current_streak = 0
+
+    for contribution_count in reversed(
+        df.sort_values("date")["contributionCount"].tolist()
+    ):
+
+        if contribution_count > 0:
+            current_streak += 1
+        else:
+            break
+
+    return {
+        "monthly": monthly,
+        "weekday": weekday,
+        "active_days": active_days,
+        "average_per_active_day": average_per_active_day,
+        "current_streak": current_streak
+    }
 
 
 # ==========================
@@ -162,6 +249,54 @@ def most_worked_repo(repositories):
     }
 
 
+# ==========================
+# REPOSITORY RANKINGS
+# ==========================
+
+def repository_rankings(repositories):
+
+    ranked = []
+
+    for repo in repositories:
+
+        commit_count = 0
+
+        try:
+
+            commit_count = (
+                repo["defaultBranchRef"]
+                ["target"]
+                ["history"]
+                ["totalCount"]
+            )
+
+        except:
+            pass
+
+        ranked.append({
+            "name": repo["name"],
+            "stars": repo.get("stargazerCount", 0),
+            "commits": commit_count
+        })
+
+    top_starred = sorted(
+        ranked,
+        key=lambda repo: repo["stars"],
+        reverse=True
+    )[:5]
+
+    top_committed = sorted(
+        ranked,
+        key=lambda repo: repo["commits"],
+        reverse=True
+    )[:5]
+
+    return {
+        "top_starred": top_starred,
+        "top_committed": top_committed
+    }
+
+
 
 
 # ==========================
@@ -228,6 +363,10 @@ def analytics_pipeline(
             days
         )
 
+        contribution_data = contribution_breakdowns(
+            days
+        )
+
         # ==================
         # Repositories
         # ==================
@@ -256,6 +395,10 @@ def analytics_pipeline(
         )
 
         repository = most_worked_repo(
+            repositories
+        )
+
+        repo_rankings = repository_rankings(
             repositories
         )
 
@@ -289,6 +432,15 @@ def analytics_pipeline(
             "most_active_month":
             active_month,
 
+            "current_streak":
+            contribution_data["current_streak"],
+
+            "active_days":
+            contribution_data["active_days"],
+
+            "average_per_active_day":
+            contribution_data["average_per_active_day"],
+
             "most_worked_repository": {
             "name": repository["repository"],
             "commit_count": repository["commits"]
@@ -299,6 +451,15 @@ def analytics_pipeline(
 
             "languages":
             language_data["languages"],
+
+            "contribution_trend":
+            contribution_data["monthly"],
+
+            "weekday_activity":
+            contribution_data["weekday"],
+
+            "repositories":
+            repo_rankings,
         }
 
     except Exception as e:
