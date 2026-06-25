@@ -275,7 +275,14 @@ def repository_rankings(repositories):
 
         ranked.append({
             "name": repo["name"],
+            "description": repo.get("description"),
+            "url": repo.get("url"),
             "stars": repo.get("stargazerCount", 0),
+            "forks": repo.get("forkCount", 0),
+            "updated_at": repo.get("updatedAt"),
+            "language": (
+                repo.get("primaryLanguage") or {}
+            ).get("name", "Unknown"),
             "commits": commit_count
         })
 
@@ -294,6 +301,63 @@ def repository_rankings(repositories):
     return {
         "top_starred": top_starred,
         "top_committed": top_committed
+    }
+
+
+# ==========================
+# REPOSITORY OVERVIEW
+# ==========================
+
+def repository_overview(repositories):
+
+    total_stars = sum(
+        repo.get("stargazerCount", 0)
+        for repo in repositories
+    )
+
+    total_forks = sum(
+        repo.get("forkCount", 0)
+        for repo in repositories
+    )
+
+    total_commits = 0
+
+    for repo in repositories:
+
+        try:
+
+            total_commits += (
+                repo["defaultBranchRef"]
+                ["target"]
+                ["history"]
+                ["totalCount"]
+            )
+
+        except:
+            pass
+
+    recently_updated = sorted(
+        repositories,
+        key=lambda repo: repo.get("updatedAt") or "",
+        reverse=True
+    )
+
+    latest_repo = recently_updated[0] if recently_updated else {}
+
+    return {
+        "analyzed_count": len(repositories),
+        "total_stars": total_stars,
+        "total_forks": total_forks,
+        "total_commits": total_commits,
+        "average_stars": (
+            round(total_stars / len(repositories), 1)
+            if repositories else 0
+        ),
+        "recently_updated": {
+            "name": latest_repo.get("name"),
+            "url": latest_repo.get("url"),
+            "updated_at": latest_repo.get("updatedAt")
+        }
     }
 
 
@@ -383,9 +447,13 @@ def analytics_pipeline(
                 repo_data["errors"][0]["message"]
             }
 
-        repositories = (
+        user_data = (
             repo_data["data"]
             ["user"]
+        )
+
+        repositories = (
+            user_data
             ["repositories"]
             ["nodes"]
         )
@@ -402,6 +470,10 @@ def analytics_pipeline(
             repositories
         )
 
+        repo_overview = repository_overview(
+            repositories
+        )
+
         # ==================
         # Final Response
         # ==================
@@ -411,6 +483,23 @@ def analytics_pipeline(
             "success": True,
 
             "username": username,
+
+            "profile": {
+                "name": user_data.get("name"),
+                "login": user_data.get("login"),
+                "bio": user_data.get("bio"),
+                "avatar_url": user_data.get("avatarUrl"),
+                "url": user_data.get("url"),
+                "followers": (
+                    user_data.get("followers") or {}
+                ).get("totalCount", 0),
+                "following": (
+                    user_data.get("following") or {}
+                ).get("totalCount", 0),
+                "public_repositories": (
+                    user_data.get("repositories") or {}
+                ).get("totalCount", 0)
+            },
 
             "time_range_months": months,
 
@@ -460,6 +549,9 @@ def analytics_pipeline(
 
             "repositories":
             repo_rankings,
+
+            "repository_overview":
+            repo_overview,
         }
 
     except Exception as e:
