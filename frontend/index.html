@@ -1,62 +1,96 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GitHub Analytics Dashboard</title>
-
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
-
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-
 <body>
+    <div class="app-wrapper">
+        <!-- Navigation / Header -->
+        <header class="top-nav">
+            <div class="brand">
+                <svg class="brand-icon" viewBox="0 0 24 24" width="28" height="28" fill="currentColor">
+                    <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+                </svg>
+                <div class="brand-text">
+                    <span class="brand-title">GitHub Analytics</span>
+                    <span class="brand-tag">Dashboard</span>
+                </div>
+            </div>
+            <div class="nav-status">
+                <span class="status-dot"></span>
+                <span class="status-label">API Ready</span>
+            </div>
+        </header>
 
-    <div class="container">
+        <!-- Search Bar Section -->
+        <section class="search-section">
+            <div class="search-card">
+                <div class="search-input-group">
+                    <span class="search-prefix">github.com/</span>
+                    <input 
+                        type="text" 
+                        id="username" 
+                        placeholder="username" 
+                        autocomplete="off" 
+                        spellcheck="false"
+                        onkeydown="if(event.key === 'Enter') analyze()">
+                </div>
+                
+                <div class="select-wrapper">
+                    <select id="months">
+                        <option value="1">Last 1 Month</option>
+                        <option value="3">Last 3 Months</option>
+                        <option value="6">Last 6 Months</option>
+                        <option value="12" selected>Last 1 Year</option>
+                    </select>
+                </div>
 
-        <div class="hero">
-
-            <h1>GitHub Analytics Dashboard</h1>
-
-            <p>
-                Analyze any GitHub developer's contributions,
-                streaks, repositories and languages.
-            </p>
-
-            <div class="search-box">
-
-                <input
-                    type="text"
-                    id="username"
-                    placeholder="Enter GitHub Username">
-
-                <select id="months">
-                    <option value="1">Last 1 Month</option>
-                    <option value="3">Last 3 Months</option>
-                    <option value="6">Last 6 Months</option>
-                    <option value="12">Last 1 Year</option>
-                </select>
-
-                <button onclick="analyze()">
-                    Analyze
+                <button class="btn-analyze" onclick="analyze()" id="analyzeBtn">
+                    <span class="btn-text">Analyze</span>
+                    <svg class="btn-arrow" viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
+                        <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+                    </svg>
                 </button>
-
             </div>
 
+            <!-- Quick pick chips -->
+            <div class="quick-picks">
+                <span class="quick-label">Try popular:</span>
+                <button type="button" class="quick-chip" onclick="quickSearch('torvalds')">@torvalds</button>
+                <button type="button" class="quick-chip" onclick="quickSearch('karpathy')">@karpathy</button>
+                <button type="button" class="quick-chip" onclick="quickSearch('gaearon')">@gaearon</button>
+                <button type="button" class="quick-chip" onclick="quickSearch('shadcn')">@shadcn</button>
+            </div>
+        </section>
+
+        <!-- Loading State -->
+        <div id="loader" class="loader-container hidden">
+            <div class="loader-spinner"></div>
+            <p class="loader-text">Fetching profile & contribution metrics from GitHub...</p>
         </div>
 
-        <div id="loader" class="hidden">
-            <div class="spinner"></div>
-        </div>
-
-        <div id="dashboard"></div>
-
+        <!-- Dashboard Content -->
+        <main id="dashboard" class="dashboard-area">
+            <!-- Initial Empty State -->
+            <div class="empty-state">
+                <div class="empty-icon-wrap">
+                    <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.8">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                </div>
+                <h3>Developer Insights at a Glance</h3>
+                <p>Enter any GitHub username above to discover contribution trends, streaks, language distributions, and repository rankings.</p>
+            </div>
+        </main>
     </div>
 
     <script src="js/app.js"></script>
-
 </body>
-
 </html>
-
