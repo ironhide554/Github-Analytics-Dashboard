@@ -198,7 +198,7 @@ The application communicates with GitHub's GraphQL API, which requires an authen
 4. Copy the generated token.
 5. Create a `.env` file in the project root directory:
    ```env
-   GITHUB_TOKEN=ghp_yourActualGitHubPersonalAccessTokenHere
+   GITHUB_TOKEN="YOUR_TOKEN"
    ```
 
 ---
@@ -364,4 +364,4 @@ This project is open-source and licensed under the [MIT License](LICENSE).
 ## 👨‍💻 Author
 
 **Sparsh Tiwari**  
-* GitHub: [@sparsh-tiwari](https://github.com/sparsh-tiwari)
+* GitHub: [@ironhide554](https://github.com/ironhide554)
