@@ -399,12 +399,22 @@ def analytics_pipeline(
             end_date
         )
 
-        if "errors" in contributions:
-
+        if "message" in contributions:
             return {
                 "success": False,
-                "message":
-                contributions["errors"][0]["message"]
+                "message": f"GitHub API error: {contributions['message']}. Please verify your GITHUB_TOKEN in .env."
+            }
+
+        if "errors" in contributions:
+            return {
+                "success": False,
+                "message": contributions["errors"][0]["message"]
+            }
+
+        if not contributions.get("data") or not contributions["data"].get("user"):
+            return {
+                "success": False,
+                "message": f"GitHub user '{username}' was not found or has no accessible activity."
             }
 
         total_contributions = (
@@ -439,12 +449,22 @@ def analytics_pipeline(
             username
         )
 
-        if "errors" in repo_data:
-
+        if "message" in repo_data:
             return {
                 "success": False,
-                "message":
-                repo_data["errors"][0]["message"]
+                "message": f"GitHub API error: {repo_data['message']}. Please verify your GITHUB_TOKEN in .env."
+            }
+
+        if "errors" in repo_data:
+            return {
+                "success": False,
+                "message": repo_data["errors"][0]["message"]
+            }
+
+        if not repo_data.get("data") or not repo_data["data"].get("user"):
+            return {
+                "success": False,
+                "message": f"Repositories for GitHub user '{username}' could not be loaded."
             }
 
         user_data = (
